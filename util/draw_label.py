@@ -5,6 +5,47 @@ from numpy import zeros as npzeros
 from numpy import array as nparray
 from queue import Queue
 
+import cv2
+
+def connect_pts(pt1, pt2):
+    """
+    判断 pt1, pt2 是否相连, 若否, 插入点使其相连.
+    注意: 由于 cv2 的坐标为(col, row), 与 array <-> img 的标识方法不同, 因此在本函数中只以 col, row 表示, 不以 x, y 表示.
+    前开后闭.
+    :param pt1: 上一个点 (col, row)
+    :param pt2: 新的点   (col, row)
+    :return: line_list
+    """
+    line_list = []
+    col1, row1 = pt1
+    col2, row2 = pt2
+    if abs(col1 - col2) > 1 or abs(row1 - row2) > 1:
+        if col1 == col2:
+            for row in range(row1+1, row2+1):
+                line_list.append([col1, row])
+        else:
+            for col in range(col1+1, col2+1):
+                row = (row2 - row1) / (col2 - col1) * (col - col1) + row1
+                line_list.append([col, row])
+    else:
+        line_list.append(pt2)
+    return line_list
+
+def add_dict(dict, list):
+    """
+    将新的点 list 加入到之前的点 dict 中.
+    :param dict: {'row': [col, ...], ...}
+    :param list: [[col, row], ...]
+    :return:
+    """
+    for pt in list:
+        col, row = pt
+        if row in dict.keys():
+            dict[row].append(col)
+        else:
+            dict[row] = [col]
+    return dict
+
 def draw_event(event, x, y, flags, param):
     """
     创建鼠标事件, 进行圈画.
@@ -12,11 +53,12 @@ def draw_event(event, x, y, flags, param):
     :param x:       鼠标位置.column 位置
     :param y:       鼠标位置.row 位置
     :param flags:   CV2 内置的鼠标FLAG, 判断是否左键为按下情况.
-    :param param:   传入的额外参数, [图片, 边界点]
+    :param param:   传入的额外参数, [图片, 边界点dict, 上一个点]
     :return: param
     """
     img = param[0]
     edge_dict = param[1]
+    last_pt = param[2]
     # todo: 如何把线填满.
     if event == cv2.EVENT_LBUTTONDOWN:
         print(x, y)
@@ -67,6 +109,7 @@ class DrawLabel():
         """
         填充画出的边界作为 label.
         使用 queue 来完成遍历填充.
+        对于每一个index对应的value进行sort, 继而进行填空.
         :param flag: 良恶性, 良性为2, 恶性为1.
         :return:
         """
@@ -87,10 +130,17 @@ class DrawLabel():
 
 
 if __name__ == '__main__':
-    drawlabel = DrawLabel()
-    fp = 'E:\gif\恶性\恶性\\0000041760管亚军1.gif'
-    drawlabel.read_gif(fp)
-    drawlabel.draw_edge()
-    plt.subplot(1,2,1), plt.imshow(drawlabel.img_origin)
-    plt.subplot(1,2,2), plt.imshow(drawlabel.img_edged)
-    plt.show()
+    # drawlabel = DrawLabel()
+    # fp = 'E:\gif\恶性\恶性\\0000041760管亚军1.gif'
+    # drawlabel.read_gif(fp)
+    # drawlabel.draw_edge()
+    # plt.subplot(1,2,1), plt.imshow(drawlabel.img_origin)
+    # plt.subplot(1,2,2), plt.imshow(drawlabel.img_edged)
+    # plt.show()
+    pt1 = [0,0]
+    pt2 = [2,2]
+    pt3 = [2,0]
+    pt4 = [0,2]
+    print(connect_pts(pt1,pt2))
+    print(connect_pts(pt1, pt3))
+    print(connect_pts(pt1, pt4))
