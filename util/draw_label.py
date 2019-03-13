@@ -76,21 +76,19 @@ def draw_event(event, x, y, flags, param):
     first_pt = param[2]
     last_pt = param[3]
     if event == cv2.EVENT_LBUTTONDOWN:
-        print(x, y)
-        if y in edge_dict.keys(): # 若此 row 存在于 edge_dict 的 index 中, 则在值后append x.
-            edge_dict[y].append(x)
-        else:                     # 若此 row 不存在, 则创建 list 存储 x.
-            edge_dict[y] = [x]
+        print('start', x, y)
+        edge_dict[y] = [x]
+        param[2] = [x, y]
+        param[3] = [x, y]
 
     elif event == cv2.EVENT_MOUSEMOVE and flags == cv2.EVENT_FLAG_LBUTTON: # 按住鼠标进行拖动
+        print(first_pt, last_pt)
         list = connect_pts(pt1=last_pt, pt2=[x, y]) # 将当前点与上一个点相连
-        print(list)
         edge_dict, param[4] = add_dict(edge_dict, list)
-        print(param[4])
         print('Move : (%d, %d)' % (x, y))
-        print(edge_dict.__len__())
-        print(edge_dict)
         cv2.line(img, tuple(last_pt), (x,y), (0, 0, 255), 1)
+        param[3] = [x, y]
+
 
     elif event == cv2.EVENT_LBUTTONUP:
         """
@@ -100,7 +98,7 @@ def draw_event(event, x, y, flags, param):
         if param[4] is False:
             extra_line_list = connect_pts([x,y], first_pt)
             edge_dict, param[4] = add_dict(edge_dict, extra_line_list)
-            cv2.line(img, tuple(last_pt), (x, y), (0, 0, 255), 1)
+            cv2.line(img, (x,y), tuple(first_pt), (0, 0, 255), 1)
         print('END: (%d, %d)' % (x, y))
 
 class DrawLabel():
@@ -108,10 +106,12 @@ class DrawLabel():
     使用此 class 进行单幅图像圈画.
     """
     def __init__(self):
-        # TODO: 把 edge_list 换成 edge_dict 如何.
         # 变成dict以后就可以直接fill了:
         # 在同一个index里面, 先填满，然后空，再填满.
         self.edge_dict = {}
+        self.first_pt = []
+        self.last_pt =[]
+        self.flag_closed = False
 
     def read_gif(self, fp):
         self.img_origin = mpimg.imread(fp)
@@ -124,7 +124,8 @@ class DrawLabel():
         :return:
         """
         cv2.namedWindow('draw label')
-        cv2.setMouseCallback('draw label', draw_event, [self.img_edged, self.edge_dict])
+        cv2.setMouseCallback('draw label', draw_event, [self.img_edged, self.edge_dict,
+            self.first_pt, self.last_pt, self.flag_closed])
         while(1):
             cv2.imshow('draw label', self.img_edged)
             if cv2.waitKey(5) & 0xFF == 27:
@@ -149,7 +150,6 @@ class DrawLabel():
         while not label_queue.empty():
             pass
 
-
         pass
         # print('draw label')
 
@@ -157,17 +157,18 @@ class DrawLabel():
 
 
 if __name__ == '__main__':
-    # drawlabel = DrawLabel()
-    # fp = 'E:\gif\恶性\恶性\\0000041760管亚军1.gif'
-    # drawlabel.read_gif(fp)
-    # drawlabel.draw_edge()
-    # plt.subplot(1,2,1), plt.imshow(drawlabel.img_origin)
-    # plt.subplot(1,2,2), plt.imshow(drawlabel.img_edged)
-    # plt.show()
-    pt1 = [0,0]
-    pt2 = [2,2]
-    pt3 = [2,0]
-    pt4 = [0,2]
-    print(connect_pts(pt1,pt2))
-    print(connect_pts(pt1, pt3))
-    print(connect_pts(pt1, pt4))
+    # TODO: 点的数量不对.
+    drawlabel = DrawLabel()
+    fp = 'E:\gif\恶性\恶性\\0000041760管亚军1.gif'
+    drawlabel.read_gif(fp)
+    drawlabel.draw_edge()
+    plt.subplot(1,2,1), plt.imshow(drawlabel.img_origin)
+    plt.subplot(1,2,2), plt.imshow(drawlabel.img_edged)
+    plt.show()
+    # pt1 = [0,0]
+    # pt2 = [2,2]
+    # pt3 = [2,0]
+    # pt4 = [0,2]
+    # print(connect_pts(pt1,pt2))
+    # print(connect_pts(pt1, pt3))
+    # print(connect_pts(pt1, pt4))
