@@ -12,21 +12,31 @@ def connect_pts(pt1, pt2):
     判断 pt1, pt2 是否相连, 若否, 插入点使其相连.
     注意: 由于 cv2 的坐标为(col, row), 与 array <-> img 的标识方法不同, 因此在本函数中只以 col, row 表示, 不以 x, y 表示.
     前开后闭.
-    :param pt1: 上一个点 (col, row)
-    :param pt2: 新的点   (col, row)
+    经确认上右下左四向无问题.
+    :param pt1: list 上一个点 [col, row]
+    :param pt2: list 新的点   [col, row]
     :return: line_list
     """
     line_list = []
     col1, row1 = pt1
     col2, row2 = pt2
     if abs(col1 - col2) > 1 or abs(row1 - row2) > 1:
-        if col1 == col2:
-            for row in range(row1+1, row2+1):
-                line_list.append([col1, row])
+        if row1 == row2:
+            if col1 < col2:
+                for col in range(col1+1, col2+1):
+                    line_list.append([col, row1])
+            elif col2 < col1:
+                for col in range(col1-1, col2-1, -1):
+                    line_list.append([col, row1])
         else:
-            for col in range(col1+1, col2+1):
-                row = (row2 - row1) / (col2 - col1) * (col - col1) + row1
-                line_list.append([col, row])
+            if row1 < row2:
+                for row in range(row1+1, row2+1):
+                    col = int((col2 - col1) / (row2 - row1) * (row - row1) + col1)
+                    line_list.append([col, row])
+            elif row2 < row1:
+                for row in range(row1-1, row2-1, -1):
+                    col = int((col2 - col1) / (row2 - row1) * (row - row1) + col1)
+                    line_list.append([col, row])
     else:
         line_list.append(pt2)
     return line_list
@@ -36,15 +46,20 @@ def add_dict(dict, list):
     将新的点 list 加入到之前的点 dict 中.
     :param dict: {'row': [col, ...], ...}
     :param list: [[col, row], ...]
-    :return:
+    :return: dict, flag_closed: bool, 闭合与否.
     """
+    assert len(list) > 0
     for pt in list:
         col, row = pt
         if row in dict.keys():
+            if col in dict[row]: # 如果已经交叉闭合, 则结束记录返回,
+                flag_closed = True
+                return dict, flag_closed
             dict[row].append(col)
         else:
             dict[row] = [col]
-    return dict
+        flag_closed = False
+    return dict, flag_closed
 
 def draw_event(event, x, y, flags, param):
     """
@@ -53,27 +68,39 @@ def draw_event(event, x, y, flags, param):
     :param x:       鼠标位置.column 位置
     :param y:       鼠标位置.row 位置
     :param flags:   CV2 内置的鼠标FLAG, 判断是否左键为按下情况.
-    :param param:   传入的额外参数, [图片, 边界点dict, 上一个点]
+    :param param:   传入的额外参数, [图片, 边界点dict, 第一个点, 上一个点, 图形是否闭合]
     :return: param
     """
     img = param[0]
     edge_dict = param[1]
-    last_pt = param[2]
-    # todo: 如何把线填满.
+    first_pt = param[2]
+    last_pt = param[3]
     if event == cv2.EVENT_LBUTTONDOWN:
         print(x, y)
         if y in edge_dict.keys(): # 若此 row 存在于 edge_dict 的 index 中, 则在值后append x.
             edge_dict[y].append(x)
         else:                     # 若此 row 不存在, 则创建 list 存储 x.
             edge_dict[y] = [x]
-    elif event == cv2.EVENT_MOUSEMOVE and flags == cv2.EVENT_FLAG_LBUTTON:
 
-        edge_dict.append([x, y])
+    elif event == cv2.EVENT_MOUSEMOVE and flags == cv2.EVENT_FLAG_LBUTTON: # 按住鼠标进行拖动
+        list = connect_pts(pt1=last_pt, pt2=[x, y]) # 将当前点与上一个点相连
+        print(list)
+        edge_dict, param[4] = add_dict(edge_dict, list)
+        print(param[4])
         print('Move : (%d, %d)' % (x, y))
         print(edge_dict.__len__())
-        print(edge_dict[-2])
-        cv2.line(img, tuple(edge_dict[-2]), tuple(edge_dict[-1]), (0, 0, 255),1)
+        print(edge_dict)
+        cv2.line(img, tuple(last_pt), (x,y), (0, 0, 255), 1)
+
     elif event == cv2.EVENT_LBUTTONUP:
+        """
+        检查图像是否闭合, 若已经闭合, 返回.
+        若尚未闭合, 链接当前点与第一个点.
+        """
+        if param[4] is False:
+            extra_line_list = connect_pts([x,y], first_pt)
+            edge_dict, param[4] = add_dict(edge_dict, extra_line_list)
+            cv2.line(img, tuple(last_pt), (x, y), (0, 0, 255), 1)
         print('END: (%d, %d)' % (x, y))
 
 class DrawLabel():
