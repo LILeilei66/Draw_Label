@@ -46,14 +46,19 @@ def connect_pts(pt1, pt2):
         line_list.append(pt2)
     return line_list
 
-def add_dict(dict, list):
+def add_dict(dict, list, cnt=None, ):
     """
     将新的点 list 加入到之前的点 dict 中.
     :param dict: {'row': [col, ...], ...}
     :param list: [[col, row], ...]
     :return: dict, flag_closed: bool, 闭合与否.
     """
-    assert len(list) > 0
+
+    try:
+        assert  len(list) > 0
+    except AssertionError:
+        print(cnt)
+        flag_closed = False
     for pt in list:
         col, row = pt
         if row in dict.keys():
@@ -187,7 +192,7 @@ class DrawLabel():
         self.edge_dict = {self.edge_list[0][1]: [self.edge_list[0][0]]}
         for i, point in enumerate(self.edge_list[1:]): # 将本点与前一个点比较
             expanded_list = connect_pts(self.edge_list[i], point)
-            self.edge_dict, self.flag_closed = add_dict(self.edge_dict, expanded_list)
+            self.edge_dict, self.flag_closed = add_dict(self.edge_dict, expanded_list, i)
             if self.flag_closed is True:
                 break
 
@@ -201,7 +206,7 @@ class DrawLabel():
 
         # 4. 对于dict里面的每个index的值进行sort
         for key in self.edge_dict.keys():
-            
+            self.edge_dict[key] = sorted(self.edge_dict[key])
 
     def cut(self):
         """
@@ -217,9 +222,8 @@ class DrawLabel():
         对于每一个index对应的value进行sort, 继而进行填空.
         :param flag: 良恶性, 良性为2, 恶性为1.
         :return:
-        todo: 注意加点
         """
-        print(self.edge_dict)
+        assert self.flag_closed is True
         for row in self.edge_dict.keys():
             to_fill = True
             if len(self.edge_dict[row]) == 1: # 在上下出现一个角

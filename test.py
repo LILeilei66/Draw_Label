@@ -65,23 +65,20 @@ class Tests(unittest.TestCase):
 
     def test_06_fill_label(self):
         # 圈出部分填充
-        import matplotlib.pyplot as plt
         import numpy as np
         drawlabel = DrawLabel()
         drawlabel.img_origin = npzeros((6, 6))
         drawlabel.img_edged = drawlabel.img_origin.copy()
         drawlabel.img_label = npzeros((6, 6))
-        edge_dict = { '0': np.arange(5),
-                      '1': [0, 4],
-                      '2': [0, 4],
-                      '3': [0, 4],
-                      '4': np.arange(5)}
+        edge_dict = { 0: list(np.arange(5)),
+                      1: [0, 4],
+                      2: [0, 4],
+                      3: [0, 4],
+                      4: list(np.arange(5))}
         drawlabel.edge_dict = edge_dict
+        drawlabel.flag_closed = True
         drawlabel.fill_label(255)
-        # plt.imshow(drawlabel.img_label)
-        # plt.show()
-        assert drawlabel.img_label[1,1] == 255
-        print(drawlabel.img_label)
+        self.assertEqual(drawlabel.img_label.sum(), 255 * 5 * 4)
 
 if __name__ == '__main__':
     unittest.main()
