@@ -34,6 +34,7 @@ def connect_pts(pt1, pt2):
             for row in range(row1 - 1, row2 - 1, -1):
                 col = int((col2 - col1) / (row2 - row1) * (row - row1) + col1)
                 line_list.append([col, row])
+        assert len(line_list) == abs(pt1[1] - pt2[1])
 
     elif row1 == row2: # 填成直线.
         if col1 < col2:
@@ -42,8 +43,12 @@ def connect_pts(pt1, pt2):
         elif col2 < col1:
             for col in range(col1-1, col2-1, -1):
                 line_list.append([col, row1])
+        assert len(line_list) == abs(pt2[0] - pt1[0])
+
     else:
         line_list.append(pt2)
+        assert len(line_list) == 1
+
     return line_list
 
 def add_dict(dict, list, cnt=None, ):

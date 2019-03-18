@@ -80,6 +80,8 @@ class Tests(unittest.TestCase):
         drawlabel.fill_label(255)
         self.assertEqual(drawlabel.img_label.sum(), 255 * 5 * 4)
 
+
+
 if __name__ == '__main__':
     unittest.main()
     # tests = Tests()

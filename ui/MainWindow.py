@@ -5,9 +5,8 @@ from PyQt5.QtWidgets import QFileDialog
 
 import sys
 
-from util.draw_label import DrawLabel
 
-class MainWindow(QMainWindow):
+class UiMainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
         self.start_btn = QPushButton('开始绘图')
@@ -37,13 +36,11 @@ class MainWindow(QMainWindow):
         main_widget = QWidget()
         main_widget.setLayout(main_layout)
         self.setCentralWidget(main_widget)
-
         self.create_connection()
 
     def create_connection(self):
         self.src_btn.clicked.connect(self.get_src_dir)
         self.dst_btn.clicked.connect(self.get_dst_dir)
-        self.start_btn.clicked.connect(self.start_main_func)
 
     def get_src_dir(self):
         self.src_dir = QFileDialog.getExistingDirectory()
@@ -55,13 +52,9 @@ class MainWindow(QMainWindow):
         print(self.dst_dir)
         self.dst_txt.setText(self.dst_dir)
 
-    def start_main_func(self):
-        draw_label = DrawLabel()
-        draw_label.draw_label()
-
 
 if __name__ == '__main__':
     app = QApplication(sys.argv)
-    mainwindow = MainWindow()
+    mainwindow = UiMainWindow()
     mainwindow.show()
     sys.exit(app.exec_())
